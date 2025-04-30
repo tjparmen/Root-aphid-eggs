@@ -9,6 +9,8 @@ data files:
 -hatching.txt
 -predation.txt
 -retrieval.txt
+-glass beads.txt
+-coordinates.txt
 
 
  
