@@ -1,4 +1,4 @@
-id	treatment	colony	soil_added_g	start	end
+id	treatment	nest	soil_added_g	start	end
 plus1	plus	LF_D	0.1997	5	5
 plus2	plus	LF_D	0.2001	5	5
 plus3	plus	LF_D	0.1994	5	1

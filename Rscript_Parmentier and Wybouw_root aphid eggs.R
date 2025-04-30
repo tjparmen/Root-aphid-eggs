@@ -10,7 +10,6 @@ rm(list = ls(all = TRUE))
 ### 5. Hatching of root aphid eggs ###
 
 
-
 ### load required packages
 library(coxme)
 library(survival)
@@ -27,7 +26,12 @@ library(multcomp)
 library(riskRegression)
 library(adjustedCurves)
 library(pammtools)
-
+library(ART)
+library(svglite)
+library(ARTool)
+library(ggmap)
+library(ggplot2)
+library(measurements)
 
 
 ######################################################################################
@@ -35,11 +39,11 @@ library(pammtools)
 ######################################################################################
 
 datasetpref<-read.table("retrieval.txt",header=TRUE)  
-table(datasetpref$colony,datasetpref$trophobiont)
+table(datasetpref$nest,datasetpref$trophobiont)
 
-# 1.a. Transport colony LF_B
+# 1.a. Transport nest LF_B
 ####################################
-datasetpref_LF_B<-datasetpref[datasetpref$colony=="LF_B",]
+datasetpref_LF_B<-datasetpref[datasetpref$nest=="LF_B",]
 fit_LF_B<-coxme(Surv(time, status) ~ trophobiont+(1|set),datasetpref_LF_B)
 anova(fit_LF_B)
 ph.test <- cox.zph(fit_LF_B) #proportional hazards assumption ok
@@ -64,12 +68,12 @@ plotLF_B<-plot(adjsurv_B, conf_int=T, use_boot=TRUE,custom_colors=c("black","gra
 
 #survival plot, not accounting for random variable set
 fit_LF_B_s <- survfit( Surv(time, status) ~ trophobiont, data = datasetpref_LF_B)
-ggsurvplot_facet(fit_LF_B_s, datasetpref_LF_B, facet.by = "colony",fun="event", palette = c("black","gray80","blue","red"),pval = F,conf.int=T)+ scale_x_continuous(breaks=seq(0,120,30))+scale_y_continuous(expand = c(0,0),limits = c(0, 1))+scale_x_continuous(expand = c(0, 0))
+ggsurvplot_facet(fit_LF_B_s, datasetpref_LF_B, facet.by = "nest",fun="event", palette = c("black","gray80","blue","red"),pval = F,conf.int=T)+ scale_x_continuous(breaks=seq(0,120,30))+scale_y_continuous(expand = c(0,0),limits = c(0, 1))+scale_x_continuous(expand = c(0, 0))
 
-# 1.b. Transport colony LF_C
+# 1.b. Transport nest LF_C
 ###################################
 datasetpref<-read.table("retrieval.txt",header=TRUE)  
-datasetpref_LF_C<-datasetpref[datasetpref$colony=="LF_C",]
+datasetpref_LF_C<-datasetpref[datasetpref$nest=="LF_C",]
 
 fit_LF_C<-coxme(Surv(time, status) ~ trophobiont+ (1|set), datasetpref_LF_C)
 anova(fit_LF_C)
@@ -95,13 +99,13 @@ plotLF_C<-plot(adjsurv_C, conf_int=T, use_boot=TRUE,custom_colors = c("black","g
 
 #survival plot, not accounting for random variable set
 fit_LF_C_s <- survfit( Surv(time, status) ~ trophobiont, data = datasetpref_LF_C )
-ggsurvplot_facet(fit_LF_C_s, datasetpref_LF_C, facet.by = "colony",fun="event", palette = c("black","gray80","blue","red"),pval = F,conf.int=T)+ scale_x_continuous(breaks=seq(0,120,30))+scale_y_continuous(expand = c(0,0),limits = c(0, 1))+scale_x_continuous(expand = c(0, 0))
+ggsurvplot_facet(fit_LF_C_s, datasetpref_LF_C, facet.by = "nest",fun="event", palette = c("black","gray80","blue","red"),pval = F,conf.int=T)+ scale_x_continuous(breaks=seq(0,120,30))+scale_y_continuous(expand = c(0,0),limits = c(0, 1))+scale_x_continuous(expand = c(0, 0))
 
 
-# 1.c. Transport colony LF_A
+# 1.c. Transport nest LF_A
 #################################
 datasetpref<-read.table("retrieval.txt",header=TRUE) 
-datasetpref_LF_A<-datasetpref[datasetpref$colony=="LF_A",] #select only colony LF_A
+datasetpref_LF_A<-datasetpref[datasetpref$nest=="LF_A",] #select only nest LF_A
 
 #compare aphid_egg vs ant_larvae
 datasetpref_eggsvslarvae <- datasetpref_LF_A[datasetpref_LF_A$trophobiont %in% c("aphid_egg", "ant_larva"), ]
@@ -123,7 +127,7 @@ Anova(fitbinom_eggsvslarvae)
 #############################################################################################
 
 datasetpref<-read.table("retrieval.txt",header=TRUE) 
-datasetpref_LF_A<-datasetpref[datasetpref$colony=="LF_A",] #select only colony LF_A
+datasetpref_LF_A<-datasetpref[datasetpref$nest=="LF_A",] #select only nest LF_A
 
 #compare aphid_egg vs aphid_egg_hexane_treated 
 datasetpref_eggsvseggshx <- datasetpref_LF_A[datasetpref_LF_A$trophobiont %in% c("aphid_egg", "egg_hexane_treated"), ]
@@ -141,7 +145,7 @@ Anova(fitbinom_eggsvseggshx)
 
 #survival plot, accounting for random variable set
 datasetpref<-read.table("retrieval.txt",header=TRUE) 
-datasetpref_LF_A<-datasetpref[datasetpref$colony=="LF_A",] #select only colony LF_A
+datasetpref_LF_A<-datasetpref[datasetpref$nest=="LF_A",] #select only nest LF_A
 datasetpref_LF_A<-datasetpref_LF_A[datasetpref_LF_A$trophobiont!="egg_hexane_methanol_treated",]
 cox_mod_A <- coxph(Surv(time, status) ~ trophobiont +frailty(set),
                    data=datasetpref_LF_A, x=TRUE)
@@ -163,8 +167,20 @@ plotLF_A<-plot(adjsurv_A, conf_int=T, use_boot=TRUE,custom_colors=c("black","gra
 
 # survivalplot without considering random term
 fit_LF_A_s <- survfit(Surv(time, status) ~ trophobiont, data = datasetpref_LF_A)
-ggsurvplot_facet(fit_LF_A_s, datasetpref_LF_A, facet.by = "colony",fun="event", palette = c("black","gray80","blue","red"),pval = F,conf.int=T)+ scale_x_continuous(breaks=seq(0,120,30))+scale_y_continuous(expand = c(0,0),limits = c(0, 1))+scale_x_continuous(expand = c(0, 0))
+ggsurvplot_facet(fit_LF_A_s, datasetpref_LF_A, facet.by = "nest",fun="event", palette = c("black","gray80","blue","red"),pval = F,conf.int=T)+ scale_x_continuous(breaks=seq(0,120,30))+scale_y_continuous(expand = c(0,0),limits = c(0, 1))+scale_x_continuous(expand = c(0, 0))
 
+#retrieval of glass beads coated with hexane-methanol extract of eggs vs control glass beads
+datasetbead<-read.table("glass beads.txt",header=TRUE)  
+
+datasetbeadsum<-datasetbead %>% group_by(nest,treatment,set) %>%
+  summarize(total = sum(status))
+data.frame(datasetbeadsum)
+testbeadA<-wilcox.test(total~treatment,datasetbeadsum[datasetbeadsum$nest=="LF_A",]) #Wilcoxon rank sum test for nest A
+testbeadB<-wilcox.test(total~treatment,datasetbeadsum[datasetbeadsum$nest=="LF_B",]) #Wilcoxon rank sum test for nest B
+
+m <-art(total~ as.factor(treatment)+(1|nest),data=datasetbeadsum) #aligned rank transform
+summary(m)
+anova(m)
 
 
 ############################################################################
@@ -174,14 +190,13 @@ ggsurvplot_facet(fit_LF_A_s, datasetpref_LF_A, facet.by = "colony",fun="event", 
 datasetfungus<-read.table("fungus.txt",header=TRUE)  
 
     #parametric test: assumptions violated 
-    #fit<-glm(cbind(end,5-end)~treatment+colony,binomial,datasetfungus)
+    #fit<-glm(cbind(end,5-end)~treatment+nest,binomial,datasetfungus)
     # Anova(fit)
     # library(DHARMa)
     # simulationOutput <- simulateResiduals(fittedModel = fit, plot = T)
 
-testfungusA<-wilcox.test(end~treatment,datasetfungus[datasetfungus$colony=="A",]) #Wilcoxon rank sum test for colony A
-testfungusB<-wilcox.test(end~treatment,datasetfungus[datasetfungus$colony=="B",]) #Wilcoxon rank sum test for colony B
-
+testfungusD<-wilcox.test(end~treatment,datasetfungus[datasetfungus$nest=="LF_D",]) #Wilcoxon rank sum test for nest D
+testfungusE<-wilcox.test(end~treatment,datasetfungus[datasetfungus$nest=="LF_E",]) #Wilcoxon rank sum test for nest E
 
 
 ############################################################################
@@ -193,7 +208,6 @@ testpred<-wilcox.test(5-end~treatment,datasetpred) #Wilcoxon rank sum test
 
 datasetpred %>% group_by(treatment) %>%
   summarize( mean = mean(5-end),sd= sd(5-end)) #mean eggs damaged min and plus beetle treatment
-
 
 
 ######################################
